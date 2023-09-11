@@ -1,31 +1,33 @@
 import React, { useEffect, useState } from "react";
-import MovieCard from "../components/movie/MovieCard";
+import MovieCard from "components/movie/MovieCard";
 import useSWR from "swr";
-import { fetcher } from "../config/config";
-import useDebounce from "../hooks/useDebounce";
-import { ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/solid";
+import { fetcher, tmdbAPI } from "config/config";
+import useDebounce from "hooks/useDebounce";
+import ReactPaginate from "react-paginate";
+
+const itemsPerPage = 20;
+
 const MoviePage = ({ type = "popular" }) => {
+  const [pageCount, setPageCount] = useState(0);
+  const [itemOffset, setItemOffset] = useState(0);
+
+  const [nextPage, setNextPage] = useState(1);
   const [filter, setFilter] = useState("");
-  const [url, setUrl] = useState(
-    `https://api.themoviedb.org/3/movie/popular?api_key=f9d9b04b7918c3ef2fc42e47d96a6c9d`
-  );
+  const [url, setUrl] = useState(tmdbAPI.getMovieList("popular", nextPage));
   const filterDebounce = useDebounce(filter, 500);
 
   const { data, error, isLoading } = useSWR(`${url}`, fetcher);
   // const loading = !data && !error;
-
-  // https://api.themoviedb.org/3/search/movie?api_key=<<api_key>>&query=batman
   useEffect(() => {
     if (filterDebounce) {
       setUrl(
-        `https://api.themoviedb.org/3/search/movie?api_key=f9d9b04b7918c3ef2fc42e47d96a6c9d&query=${filterDebounce}`
+        // `https://api.themoviedb.org/3/search/movie?api_key=f9d9b04b7918c3ef2fc42e47d96a6c9d&query=${filterDebounce}&page=${nextPage}`
+        tmdbAPI.getMovieSearch(filterDebounce, nextPage)
       );
     } else {
-      setUrl(
-        "https://api.themoviedb.org/3/movie/popular?api_key=f9d9b04b7918c3ef2fc42e47d96a6c9d"
-      );
+      setUrl(tmdbAPI.getMovieList("popular", nextPage));
     }
-  }, [filterDebounce]);
+  }, [filterDebounce, nextPage]);
 
   const handleFilterChange = (e) => {
     setFilter(e.target.value);
@@ -35,7 +37,20 @@ const MoviePage = ({ type = "popular" }) => {
   //   }, [data]);
   const movies = data?.results || [];
   const { page, total_pages } = data || {};
-  console.log(page, total_pages);
+
+  useEffect(() => {
+    // Fetch
+    if (!data || !data.total_results) return;
+    setPageCount(Math.ceil(data.total_results / itemsPerPage));
+    console.log(data);
+  }, [data, itemOffset]);
+
+  const handlePageClick = (event) => {
+    const newOffset = (event.selected * itemsPerPage) % data.total_pages;
+    setItemOffset(newOffset);
+    setNextPage(event.selected + 1);
+  };
+
   return (
     <div className="py-10 page-container">
       <div className="flex mb-10">
@@ -74,16 +89,17 @@ const MoviePage = ({ type = "popular" }) => {
             <MovieCard key={item.id} item={item}></MovieCard>
           ))}
       </div>
-      <div className="flex items-center justify-center mt-10 gap-x-5">
-        <span className="cursor-pointer">
-          <ChevronLeftIcon className="w-6 h-6 text-white"></ChevronLeftIcon>
-        </span>
-        <span className="inline-block px-4 py-2 leading-none bg-white rounded-lg cursor-pointer text-slate-900 ">
-          1
-        </span>
-        <span className="cursor-pointer">
-          <ChevronRightIcon className="w-6 h-6 text-white"></ChevronRightIcon>
-        </span>
+      <div className="mt-10">
+        <ReactPaginate
+          breakLabel="..."
+          nextLabel="next >"
+          onPageChange={handlePageClick}
+          pageRangeDisplayed={5}
+          pageCount={pageCount}
+          previousLabel="< previous"
+          renderOnZeroPageCount={null}
+          className="pagination"
+        />
       </div>
     </div>
   );

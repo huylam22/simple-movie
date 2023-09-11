@@ -1,17 +1,13 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 import useSWR from "swr";
-import { apiKey, fetcher } from "../config/config";
+import { apiKey, fetcher, tmdbAPI } from "config/config";
 import { SwiperSlide, Swiper } from "swiper/react";
-import MovieCard from "../components/movie/MovieCard";
+import MovieCard from "components/movie/MovieCard";
 
-// https://api.themoviedb.org/3/movie/{movie_id}?api_key=<<api_key>>
 const MovieDetailsPage = () => {
   const { movieId } = useParams();
-  const { data, error } = useSWR(
-    `https://api.themoviedb.org/3/movie/${movieId}?api_key=${apiKey}`,
-    fetcher
-  );
+  const { data, error } = useSWR(tmdbAPI.getMovieDetail(movieId), fetcher);
 
   if (!data) return null;
   const { backdrop_path, poster_path, title, genres, overview } = data;
@@ -63,7 +59,7 @@ const MovieDetailsPage = () => {
 function MovieCredits() {
   const { movieId } = useParams();
   const { data, error } = useSWR(
-    `https://api.themoviedb.org/3/movie/${movieId}/credits?api_key=${apiKey}`,
+    tmdbAPI.getMovieMeta(movieId, "credits"),
     fetcher
   );
   if (!data) return null;
@@ -76,7 +72,7 @@ function MovieCredits() {
         {cast.slice(0, 4).map((item) => (
           <div className="cast-item" key={item.id}>
             <img
-              src={`https://image.tmdb.org/t/p/original/${item.profile_path}`}
+              src={tmdbAPI.imageOriginal(item.profile_path)}
               alt=""
               className="w-full h-[350px] object-cover rounded-lg mb-3"
             />
@@ -91,7 +87,7 @@ function MovieCredits() {
 function MovieVideos() {
   const { movieId } = useParams();
   const { data, error } = useSWR(
-    `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${apiKey}`,
+    tmdbAPI.getMovieMeta(movieId, "videos"),
     fetcher
   );
   if (!data) return null;
@@ -111,7 +107,7 @@ function MovieVideos() {
                 width="1558"
                 height="876"
                 src={`https://www.youtube.com/embed/${item.key}`}
-                title="CHƠI THỬ GAME GIẢ LẬP LÀM LOÀI NGƯỜI =))))))) Đỉnh cao simulator là đây !!! - Human Simulator"
+                title="Youtube Video"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
@@ -130,7 +126,7 @@ function MovieVideos() {
 function MovieSimilar() {
   const { movieId } = useParams();
   const { data, error } = useSWR(
-    `https://api.themoviedb.org/3/movie/${movieId}/similar?api_key=${apiKey}`,
+    tmdbAPI.getMovieMeta(movieId, "similar"),
     fetcher
   );
   if (!data) return null;
