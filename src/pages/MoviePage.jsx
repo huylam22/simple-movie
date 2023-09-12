@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import MovieCard from "components/movie/MovieCard";
+import MovieCard, { MovieCardSkeleton } from "components/movie/MovieCard";
 import useSWR from "swr";
 import { fetcher, tmdbAPI } from "config/config";
 import useDebounce from "hooks/useDebounce";
 import ReactPaginate from "react-paginate";
-
+import { v4 } from "uuid";
 const itemsPerPage = 20;
 
 const MoviePage = ({ type = "popular" }) => {
@@ -16,7 +16,7 @@ const MoviePage = ({ type = "popular" }) => {
   const [url, setUrl] = useState(tmdbAPI.getMovieList("popular", nextPage));
   const filterDebounce = useDebounce(filter, 500);
 
-  const { data, error, isLoading } = useSWR(`${url}`, fetcher);
+  const { data, isLoading } = useSWR(`${url}`, fetcher);
   // const loading = !data && !error;
   useEffect(() => {
     if (filterDebounce) {
@@ -36,7 +36,7 @@ const MoviePage = ({ type = "popular" }) => {
   //     setMovies(data?.results);
   //   }, [data]);
   const movies = data?.results || [];
-  const { page, total_pages } = data || {};
+  // const { page, total_pages } = data || {};
 
   useEffect(() => {
     // Fetch
@@ -80,8 +80,14 @@ const MoviePage = ({ type = "popular" }) => {
         </button>
       </div>
       {isLoading && (
-        <div className="w-10 h-10 mx-auto border-4 border-t-4 rounded-full border-primary border-t-transparent animate-spin"></div>
+        <div className="grid grid-cols-4 gap-10">
+          {new Array(itemsPerPage).fill(8).map((idx) => {
+            return <MovieCardSkeleton key={v4}></MovieCardSkeleton>;
+          })}
+        </div>
       )}
+      {/* Spinner <div className="w-10 h-10 mx-auto border-4 border-t-4 rounded-full border-primary border-t-transparent animate-spin"></div>
+       */}
       <div className="grid grid-cols-4 gap-10">
         {!isLoading &&
           movies.length > 0 &&
